@@ -50,7 +50,7 @@ The client session supports the context manager protocol for self closing.
                          connector_owner=True, \
                          auto_decompress=True, \
                          read_bufsize=2**16, \
-                         requote_redirect_url=False, \
+                         requote_redirect_url=True, \
                          trust_env=False, \
                          trace_configs=None)
 
@@ -164,8 +164,7 @@ The client session supports the context manager protocol for self closing.
       connection pool between sessions without sharing session state:
       cookies etc.
 
-   :param bool auto_decompress: Automatically decompress response body,
-       ``True`` by default
+   :param bool auto_decompress: Automatically decompress response body (``True`` by default).
 
       .. versionadded:: 2.3
 
@@ -338,10 +337,11 @@ The client session supports the context manager protocol for self closing.
                          proxy=None, proxy_auth=None,\
                          timeout=sentinel, ssl=None, \
                          verify_ssl=None, fingerprint=None, \
-                         ssl_context=None, proxy_headers=None)
+                         ssl_context=None, proxy_headers=None, \
+                         auto_decompress=None)
       :async-with:
       :coroutine:
-      :noindex:
+      :noindexentry:
 
       Performs an asynchronous HTTP request. Returns a response object.
 
@@ -509,6 +509,10 @@ The client session supports the context manager protocol for self closing.
         tracers that is only available at request time.
 
          .. versionadded:: 3.0
+
+      :param bool auto_decompress: Automatically decompress response body.
+         Overrides :attr:`ClientSession.auto_decompress`.
+         May be used to enable/disable auto decompression on a per-request basis.
 
       :return ClientResponse: a :class:`client response <ClientResponse>`
          object.
@@ -1713,7 +1717,7 @@ ClientTimeout
 
    .. note::
 
-      Timeouts larger than 5 seconds are rounded for scheduling on the next
+      Timeouts of 5 seconds or more are rounded for scheduling on the next
       second boundary (an absolute time where microseconds part is zero) for the
       sake of performance.
 
@@ -2081,7 +2085,7 @@ All exceptions are available as members of *aiohttp* module.
 
     Represent Content-Disposition header
 
-    .. attribute:: value
+    .. attribute:: type
 
     A :class:`str` instance. Value of Content-Disposition header
     itself, e.g. ``attachment``.

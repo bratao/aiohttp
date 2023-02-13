@@ -3,7 +3,6 @@
 import asyncio
 import base64
 import binascii
-import cgi
 import dataclasses
 import datetime
 import enum
@@ -19,6 +18,7 @@ import warnings
 import weakref
 from collections import namedtuple
 from contextlib import suppress
+from email.parser import HeaderParser
 from email.utils import parsedate
 from http.cookies import SimpleCookie
 from math import ceil
@@ -27,6 +27,7 @@ from types import TracebackType
 from typing import (
     Any,
     Callable,
+    ContextManager,
     Dict,
     Generator,
     Generic,
@@ -66,12 +67,6 @@ PY_38 = sys.version_info >= (3, 8)
 PY_310 = sys.version_info >= (3, 10)
 
 COOKIE_MAX_LENGTH = 4096
-
-try:
-    from typing import ContextManager
-except ImportError:
-    from typing_extensions import ContextManager
-
 
 _T = TypeVar("_T")
 _S = TypeVar("_S")
@@ -123,7 +118,7 @@ if PY_38:
     iscoroutinefunction = asyncio.iscoroutinefunction
 else:
 
-    def iscoroutinefunction(func: Any) -> bool:
+    def iscoroutinefunction(func: Any) -> bool:  # type: ignore[misc]
         while isinstance(func, functools.partial):
             func = func.func
         return asyncio.iscoroutinefunction(func)
@@ -732,7 +727,6 @@ def ceil_timeout(
 
 
 class HeadersMixin:
-
     __slots__ = ("_content_type", "_content_dict", "_stored_content_type")
 
     def __init__(self) -> None:
@@ -748,7 +742,10 @@ class HeadersMixin:
             self._content_type = "application/octet-stream"
             self._content_dict = {}
         else:
-            self._content_type, self._content_dict = cgi.parse_header(raw)
+            msg = HeaderParser().parsestr("Content-Type: " + raw)
+            self._content_type = msg.get_content_type()
+            params = msg.get_params()
+            self._content_dict = dict(params[1:])  # First element is content type again
 
     @property
     def content_type(self) -> str:
@@ -1012,9 +1009,9 @@ def populate_with_cookies(
 # https://tools.ietf.org/html/rfc7232#section-2.3
 _ETAGC = r"[!#-}\x80-\xff]+"
 _ETAGC_RE = re.compile(_ETAGC)
-_QUOTED_ETAG = fr'(W/)?"({_ETAGC})"'
+_QUOTED_ETAG = rf'(W/)?"({_ETAGC})"'
 QUOTED_ETAG_RE = re.compile(_QUOTED_ETAG)
-LIST_QUOTED_ETAG_RE = re.compile(fr"({_QUOTED_ETAG})(?:\s*,\s*|$)|(.)")
+LIST_QUOTED_ETAG_RE = re.compile(rf"({_QUOTED_ETAG})(?:\s*,\s*|$)|(.)")
 
 ETAG_ANY = "*"
 

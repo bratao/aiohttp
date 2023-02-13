@@ -106,7 +106,6 @@ _MsgT = TypeVar("_MsgT", RawRequestMessage, RawResponseMessage)
 
 
 class ParseState(IntEnum):
-
     PARSE_NONE = 0
     PARSE_LENGTH = 1
     PARSE_CHUNKED = 2
@@ -125,11 +124,9 @@ class HeadersParser:
     def __init__(
         self,
         max_line_size: int = 8190,
-        max_headers: int = 32768,
         max_field_size: int = 8190,
     ) -> None:
         self.max_line_size = max_line_size
-        self.max_headers = max_headers
         self.max_field_size = max_field_size
 
     def parse_headers(
@@ -156,7 +153,7 @@ class HeadersParser:
             if len(bname) > self.max_field_size:
                 raise LineTooLong(
                     "request header name {}".format(
-                        bname.decode("utf8", "xmlcharrefreplace")
+                        bname.decode("utf8", "backslashreplace")
                     ),
                     str(self.max_field_size),
                     str(len(bname)),
@@ -178,7 +175,7 @@ class HeadersParser:
                     if header_length > self.max_field_size:
                         raise LineTooLong(
                             "request header field {}".format(
-                                bname.decode("utf8", "xmlcharrefreplace")
+                                bname.decode("utf8", "backslashreplace")
                             ),
                             str(self.max_field_size),
                             str(header_length),
@@ -199,7 +196,7 @@ class HeadersParser:
                 if header_length > self.max_field_size:
                     raise LineTooLong(
                         "request header field {}".format(
-                            bname.decode("utf8", "xmlcharrefreplace")
+                            bname.decode("utf8", "backslashreplace")
                         ),
                         str(self.max_field_size),
                         str(header_length),
@@ -222,7 +219,6 @@ class HttpParser(abc.ABC, Generic[_MsgT]):
         loop: asyncio.AbstractEventLoop,
         limit: int,
         max_line_size: int = 8190,
-        max_headers: int = 32768,
         max_field_size: int = 8190,
         timer: Optional[BaseTimerContext] = None,
         code: Optional[int] = None,
@@ -236,7 +232,6 @@ class HttpParser(abc.ABC, Generic[_MsgT]):
         self.protocol = protocol
         self.loop = loop
         self.max_line_size = max_line_size
-        self.max_headers = max_headers
         self.max_field_size = max_field_size
         self.timer = timer
         self.code = code
@@ -253,7 +248,7 @@ class HttpParser(abc.ABC, Generic[_MsgT]):
         self._payload_parser: Optional[HttpPayloadParser] = None
         self._auto_decompress = auto_decompress
         self._limit = limit
-        self._headers_parser = HeadersParser(max_line_size, max_headers, max_field_size)
+        self._headers_parser = HeadersParser(max_line_size, max_field_size)
 
     @abc.abstractmethod
     def parse_message(self, lines: List[bytes]) -> _MsgT:
@@ -284,7 +279,6 @@ class HttpParser(abc.ABC, Generic[_MsgT]):
         METH_CONNECT: str = hdrs.METH_CONNECT,
         SEC_WEBSOCKET_KEY1: istr = hdrs.SEC_WEBSOCKET_KEY1,
     ) -> Tuple[List[Tuple[_MsgT, StreamReader]], bool, bytes]:
-
         messages = []
 
         if self._tail:
@@ -295,7 +289,6 @@ class HttpParser(abc.ABC, Generic[_MsgT]):
         loop = self.loop
 
         while start_pos < data_len:
-
             # read HTTP message (request/response line + headers), \r\n\r\n
             # and split by lines
             if self._payload_parser is None and not self._upgraded:
@@ -763,7 +756,6 @@ class HttpPayloadParser:
                 self._chunk_tail = b""
 
             while chunk:
-
                 # read next chunk size
                 if self._chunk == ChunkState.PARSE_CHUNKED_SIZE:
                     pos = chunk.find(SEP)

@@ -8,16 +8,15 @@ import time
 import warnings
 import zlib
 from concurrent.futures import Executor
+from http import HTTPStatus
 from http.cookies import Morsel
 from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
     Iterator,
-    Mapping,
     MutableMapping,
     Optional,
-    Tuple,
     Union,
     cast,
 )
@@ -39,7 +38,7 @@ from .helpers import (
     sentinel,
     validate_etag_value,
 )
-from .http import RESPONSES, SERVER_SOFTWARE, HttpVersion10, HttpVersion11
+from .http import SERVER_SOFTWARE, HttpVersion10, HttpVersion11
 from .payload import Payload
 from .typedefs import JSONEncoder, LooseHeaders
 
@@ -76,7 +75,6 @@ class ContentCoding(enum.Enum):
 
 
 class StreamResponse(BaseClass, HeadersMixin, CookieMixin):
-
     __slots__ = (
         "_length_check",
         "_body",
@@ -155,7 +153,6 @@ class StreamResponse(BaseClass, HeadersMixin, CookieMixin):
         self,
         status: int,
         reason: Optional[str] = None,
-        _RESPONSES: Mapping[int, Tuple[str, str]] = RESPONSES,
     ) -> None:
         assert not self.prepared, (
             "Cannot change the response status code after " "the headers have been sent"
@@ -163,8 +160,8 @@ class StreamResponse(BaseClass, HeadersMixin, CookieMixin):
         self._status = int(status)
         if reason is None:
             try:
-                reason = _RESPONSES[self._status][0]
-            except Exception:
+                reason = HTTPStatus(self._status).phrase
+            except ValueError:
                 reason = ""
         self._reason = reason
 
@@ -497,7 +494,6 @@ class StreamResponse(BaseClass, HeadersMixin, CookieMixin):
 
 
 class Response(StreamResponse):
-
     __slots__ = (
         "_body_payload",
         "_compressed_body",
@@ -614,7 +610,7 @@ class Response(StreamResponse):
 
             # copy payload headers
             if body.headers:
-                for (key, value) in body.headers.items():
+                for key, value in body.headers.items():
                     if key not in headers:
                         headers[key] = value
 

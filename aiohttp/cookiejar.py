@@ -55,7 +55,7 @@ class CookieJar(AbstractCookieJar):
 
     MAX_TIME = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
 
-    MAX_32BIT_TIME = datetime.datetime.utcfromtimestamp(2 ** 31 - 1)
+    MAX_32BIT_TIME = datetime.datetime.utcfromtimestamp(2**31 - 1)
 
     def __init__(
         self,
@@ -342,7 +342,6 @@ class CookieJar(AbstractCookieJar):
         year = 0
 
         for token_match in cls.DATE_TOKENS_RE.finditer(date_str):
-
             token = token_match.group("token")
 
             if not found_time:

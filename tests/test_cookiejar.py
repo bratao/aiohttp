@@ -31,7 +31,7 @@ def cookies_to_send():
         "path3-cookie=eleventh; Domain=pathtest.com; Path=/one/two; "
         "path4-cookie=twelfth; Domain=pathtest.com; Path=/one/two/; "
         "expires-cookie=thirteenth; Domain=expirestest.com; Path=/;"
-        " Expires=Tue, 1 Jan 2039 12:00:00 GMT; "
+        " Expires=Tue, 1 Jan 2999 12:00:00 GMT; "
         "max-age-cookie=fourteenth; Domain=maxagetest.com; Path=/;"
         " Max-Age=60; "
         "invalid-max-age-cookie=fifteenth; Domain=invalid-values.com; "
@@ -239,7 +239,9 @@ async def test_filter_cookie_with_unicode_domain(loop: Any) -> None:
 
 async def test_filter_cookies_str_deprecated(loop: Any) -> None:
     jar = CookieJar()
-    with pytest.warns(DeprecationWarning):
+    with pytest.deprecated_call(
+        match="The method accepts yarl.URL instances only, got <class 'str'>",
+    ):
         jar.filter_cookies("http://éé.com")
 
 
@@ -518,7 +520,6 @@ class TestCookieJarSafe(TestCookieJarBase):
         )
 
     def test_path_filter_folder(self) -> None:
-
         cookies_sent, _ = self.request_reply_with_same_url("http://pathtest.com/one/")
 
         self.assertEqual(
@@ -527,7 +528,6 @@ class TestCookieJarSafe(TestCookieJarBase):
         )
 
     def test_path_filter_file(self) -> None:
-
         cookies_sent, _ = self.request_reply_with_same_url(
             "http://pathtest.com/one/two"
         )
@@ -544,7 +544,6 @@ class TestCookieJarSafe(TestCookieJarBase):
         )
 
     def test_path_filter_subfolder(self) -> None:
-
         cookies_sent, _ = self.request_reply_with_same_url(
             "http://pathtest.com/one/two/"
         )
@@ -562,7 +561,6 @@ class TestCookieJarSafe(TestCookieJarBase):
         )
 
     def test_path_filter_subsubfolder(self) -> None:
-
         cookies_sent, _ = self.request_reply_with_same_url(
             "http://pathtest.com/one/two/three/"
         )
@@ -580,7 +578,6 @@ class TestCookieJarSafe(TestCookieJarBase):
         )
 
     def test_path_filter_different_folder(self) -> None:
-
         cookies_sent, _ = self.request_reply_with_same_url(
             "http://pathtest.com/hundred/"
         )

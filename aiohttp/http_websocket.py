@@ -2,6 +2,7 @@
 
 import asyncio
 import collections
+import functools
 import json
 import random
 import re
@@ -74,8 +75,8 @@ PACK_LEN1 = Struct("!BB").pack
 PACK_LEN2 = Struct("!BBH").pack
 PACK_LEN3 = Struct("!BBQ").pack
 PACK_CLOSE_CODE = Struct("!H").pack
-MSG_SIZE: Final[int] = 2 ** 14
-DEFAULT_LIMIT: Final[int] = 2 ** 16
+MSG_SIZE: Final[int] = 2**14
+DEFAULT_LIMIT: Final[int] = 2**16
 
 
 _WSMessageBase = collections.namedtuple("_WSMessageBase", ["type", "data", "extra"])
@@ -113,7 +114,9 @@ native_byteorder: Final[str] = sys.byteorder
 
 
 # Used by _websocket_mask_python
-_XOR_TABLE: Final[List[bytes]] = [bytes(a ^ b for a in range(256)) for b in range(256)]
+@functools.lru_cache()
+def _xor_table() -> List[bytes]:
+    return [bytes(a ^ b for a in range(256)) for b in range(256)]
 
 
 def _websocket_mask_python(mask: bytes, data: bytearray) -> None:
@@ -133,6 +136,7 @@ def _websocket_mask_python(mask: bytes, data: bytearray) -> None:
     assert len(mask) == 4, mask
 
     if data:
+        _XOR_TABLE = _xor_table()
         a, b, c, d = (_XOR_TABLE[n] for n in mask)
         data[::4] = data[::4].translate(a)
         data[1::4] = data[1::4].translate(b)
